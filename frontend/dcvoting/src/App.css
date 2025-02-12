@@ -1,0 +1,216 @@
+/* Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f7f7f7;
+  color: #333;
+  display: flex;
+  justify-content: center;   /* Centers the app horizontally */
+  align-items: flex-start;    /* Aligns items to the top; change to center if you want vertical centering */
+  min-height: 100vh;
+}
+
+/* App Container - The main decentralized voting card */
+.app {
+  width: 100%;
+  max-width: 800px;
+  margin: 30px 20px; /* 30px top/bottom and 20px left/right for small screens */
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+header {
+  background-color: #007bff;
+  padding: 20px;
+  text-align: center;
+  color: #fff;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+/* Info Section */
+.info {
+  padding: 15px 20px;
+  background-color: #f0f0f0;
+  text-align: center;
+}
+
+.info p {
+  margin: 5px 0;
+}
+
+/* Main Content */
+main {
+  padding: 20px;
+  text-align: center;
+}
+
+/* Candidates Section */
+.candidates {
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.candidates h2 {
+  margin-bottom: 15px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 5px;
+  color: #007bff;
+}
+
+/* Candidate List using Grid */
+.candidate-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  justify-items: center;  /* Centers grid items */
+  margin: 0 auto;
+}
+
+.candidate-card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 15px;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 240px; /* Ensures consistent card width */
+  text-align: left; /* Keep card text left-aligned */
+}
+
+.candidate-details h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+}
+
+.candidate-details p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Vote Button */
+.vote-button {
+  padding: 8px 12px;
+  background-color: #007bff;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+.vote-button:hover {
+  background-color: #0056b3;
+}
+
+.vote-button.active {
+  background-color: #0056b3;
+}
+
+/* Submit Vote */
+.submit-vote {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.submit-button {
+  padding: 10px 20px;
+  background-color: #28a745;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+/* Admin Section */
+.admin {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
+.admin h2 {
+  margin-bottom: 15px;
+  color: #17a2b8;
+}
+
+.form-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center; /* Centers the input and button */
+  align-items: center;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+.form-group input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.add-button {
+  padding: 8px 12px;
+  background-color: #17a2b8;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.add-button:hover {
+  background-color: #138496;
+}
+
+/* Footer */
+footer {
+  background-color: #f0f0f0;
+  text-align: center;
+  padding: 15px 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  main {
+    padding: 15px;
+  }
+  /* Make candidate grid one column on small screens */
+  .candidate-list {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  .admin {
+    margin-top: 30px;
+    padding-top: 15px;
+  }
+  .form-group {
+    flex-direction: column;
+  }
+}
