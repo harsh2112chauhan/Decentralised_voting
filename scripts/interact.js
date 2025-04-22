@@ -1,30 +1,26 @@
-const { ethers } = require("hardhat");
+const hre = require("hardhat");
 require("dotenv").config();
 
+// scripts/deploy.js
+
 async function main() {
-    const contractAddress = "0xEf49189bB856E2fa945e5B7B69a925cF51aC859B"; 
-    const Voting = await ethers.getContractAt("Voting", contractAddress);
+  // Compile & get the factory
+  const Voting = await hre.ethers.getContractFactory("Voting");
 
-    // Add a Candidate (Only Owner)
-    let tx = await Voting.addCandidate("Alice");
-    await tx.wait();
-    console.log("Added candidate: Alice");
+  // Kick off the deployment
+  const voting = await Voting.deploy();
+  console.log("⏳  Deployment transaction hash:", voting.deploymentTransaction().hash);
 
-    // Fetch Candidate
-    let candidate = await Voting.getCandidate(0);
-    console.log(`Candidate 0: ${candidate[0]} - Votes: ${candidate[1]}`);
+  // Wait for the contract to be mined
+  await voting.waitForDeployment();
 
-    // Cast a vote
-    tx = await Voting.vote(0);
-    await tx.wait();
-    console.log("Voted for candidate 0");
-
-    // Fetch Candidate After Voting
-    candidate = await Voting.getCandidate(0);
-    console.log(`Candidate 0: ${candidate[0]} - Votes: ${candidate[1]}`);
+  // The deployed address is now stored in voting.target
+  console.log("✅  Voting deployed to:", voting.target);
 }
 
-main().catch((error) => {
-    console.error(error);
+main()
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error("❌  Error deploying contract:", error);
     process.exit(1);
-});
+  });
