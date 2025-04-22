@@ -287,8 +287,15 @@ function App() {
   // vote & add
   const vote = async () => {
     if (selected === null) return;
-    await (await contract.vote(selected)).wait();
-    fetchCandidates();
+    try {
+      const tx = await contract.vote(selected);
+      await tx.wait();
+      alert("Vote cast successfully!");
+      fetchCandidates(); // Refresh list
+    } catch (error) {
+      console.error("Voting error:", error);
+      alert("Error casting vote. Maybe you already voted?");
+    }
   };
   const addCandidate = async () => {
     if (!newName.trim()) return;
