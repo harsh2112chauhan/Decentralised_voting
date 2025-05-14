@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "dotenv": "^16.4.7",
+    "fs": "^0.0.1-security",
+    "harhat": "^1.0.1",
+    "paillier-bigint": "^3.4.3",
     "vite": "^6.3.0"
   }
 }

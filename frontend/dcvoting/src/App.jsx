@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
+import { encryptVoteVector } from "./encrypt";
 import {
   AppBar,
   Toolbar,
@@ -23,201 +24,254 @@ import { Brightness4, Brightness7, HowToVote } from "@mui/icons-material";
 import { styled } from "@mui/system";
 import "./App.css";
 
-const CONTRACT_ADDRESS = "0xD133e8Aa52bF567D723183ddc9Cd8c403838a434";
-const ABI = [{
-  "inputs": [],
-  "stateMutability": "nonpayable",
-  "type": "constructor"
-},
-{
-  "anonymous": false,
-  "inputs": [
+const CONTRACT_ADDRESS = "0x2B230eA4C386248f890b4aA16c21226594288336";
+const ABI =  [
     {
-      "indexed": true,
-      "internalType": "address",
-      "name": "voter",
-      "type": "address"
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "cnt",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
     },
     {
-      "indexed": true,
-      "internalType": "uint256",
-      "name": "candidateId",
-      "type": "uint256"
-    }
-  ],
-  "name": "Voted",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": false,
-      "internalType": "string",
-      "name": "winnerName",
-      "type": "string"
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "voter",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "candidateId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Voted",
+      "type": "event"
     },
     {
-      "indexed": false,
-      "internalType": "uint256",
-      "name": "winnerVoteCount",
-      "type": "uint256"
-    }
-  ],
-  "name": "VotingEnded",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [],
-  "name": "VotingReset",
-  "type": "event"
-},
-{
-  "inputs": [
-    {
-      "internalType": "string",
-      "name": "_name",
-      "type": "string"
-    }
-  ],
-  "name": "addCandidate",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint256",
-      "name": "",
-      "type": "uint256"
-    }
-  ],
-  "name": "candidates",
-  "outputs": [
-    {
-      "internalType": "string",
-      "name": "name",
-      "type": "string"
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "winnerName",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "winnerVoteCount",
+          "type": "uint256"
+        }
+      ],
+      "name": "VotingEnded",
+      "type": "event"
     },
     {
-      "internalType": "uint256",
-      "name": "voteCount",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "candidatesCount",
-  "outputs": [
-    {
-      "internalType": "uint256",
-      "name": "",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "endVotingAndDeclareWinner",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint256",
-      "name": "_candidateId",
-      "type": "uint256"
-    }
-  ],
-  "name": "getCandidate",
-  "outputs": [
-    {
-      "internalType": "string",
-      "name": "",
-      "type": "string"
+      "anonymous": false,
+      "inputs": [],
+      "name": "VotingReset",
+      "type": "event"
     },
     {
-      "internalType": "uint256",
-      "name": "",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "owner",
-  "outputs": [
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_name",
+          "type": "string"
+        }
+      ],
+      "name": "addCandidate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
     {
-      "internalType": "address",
-      "name": "",
-      "type": "address"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "candidates",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "voteCount",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
     {
-      "internalType": "uint256",
-      "name": "_candidateId",
-      "type": "uint256"
-    }
-  ],
-  "name": "vote",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [
+      "inputs": [],
+      "name": "candidatesCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
     {
-      "internalType": "uint256",
-      "name": "",
-      "type": "uint256"
-    }
-  ],
-  "name": "voterAddresses",
-  "outputs": [
+      "inputs": [],
+      "name": "count",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
     {
-      "internalType": "address",
-      "name": "",
-      "type": "address"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "encryptedSums",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
     {
-      "internalType": "address",
-      "name": "",
-      "type": "address"
-    }
-  ],
-  "name": "voters",
-  "outputs": [
+      "inputs": [],
+      "name": "endVotingAndDeclareWinner",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
     {
-      "internalType": "bool",
-      "name": "",
-      "type": "bool"
+      "inputs": [],
+      "name": "getAllEncryptedSums",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_candidateId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getCandidate",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string[]",
+          "name": "encryptedVoteVector",
+          "type": "string[]"
+        }
+      ],
+      "name": "vote",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "voterAddresses",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "voters",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-}];
+  ];
 
 const FullHeightBox = styled(Box)(({ theme }) => ({
   minHeight: "100vh",width: "100vw",
@@ -244,7 +298,7 @@ function App() {
     typography: { fontFamily: "'Poppins', sans-serif" },
   });
 
-  // 1) connect wallet + contract
+ 
   useEffect(() => {
     async function init() {
       if (!window.ethereum) return alert("Install MetaMask");
@@ -277,6 +331,9 @@ function App() {
   // 3) end voting
   const endVoting = async () => {
     if (!contract) return;
+
+    const tx1 = await contract.getAllEncryptedSums();
+    console.log(tx1);
     contract.once("VotingEnded", (wName, wCount) => {
       setWinner({ name: wName, votes: wCount.toString() });
     });
@@ -288,7 +345,8 @@ function App() {
   const vote = async () => {
     if (selected === null) return;
     try {
-      const tx = await contract.vote(selected);
+      const encryptedVector = await encryptVoteVector(selected, 3);
+      const tx = await contract.vote(encryptedVector);
       await tx.wait();
       alert("Vote cast successfully!");
       fetchCandidates(); // Refresh list
