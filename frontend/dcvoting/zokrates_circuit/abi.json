@@ -1,0 +1,17 @@
+{
+  "inputs": [
+    {
+      "name": "vote",
+      "public": false,
+      "type": "field"
+    },
+    {
+      "name": "maxCandidateId",
+      "public": true,
+      "type": "field"
+    }
+  ],
+  "output": {
+    "type": "bool"
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { encryptVoteVector } from "./encrypt";
+import { initialize } from 'zokrates-js';
 import {
   AppBar,
   Toolbar,
@@ -24,254 +25,351 @@ import { Brightness4, Brightness7, HowToVote } from "@mui/icons-material";
 import { styled } from "@mui/system";
 import "./App.css";
 
-const CONTRACT_ADDRESS = "0x2B230eA4C386248f890b4aA16c21226594288336";
-const ABI =  [
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "cnt",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "voter",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "candidateId",
-          "type": "uint256"
-        }
-      ],
-      "name": "Voted",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "winnerName",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "winnerVoteCount",
-          "type": "uint256"
-        }
-      ],
-      "name": "VotingEnded",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [],
-      "name": "VotingReset",
-      "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "_name",
-          "type": "string"
-        }
-      ],
-      "name": "addCandidate",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "candidates",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "voteCount",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "candidatesCount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "count",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "encryptedSums",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "endVotingAndDeclareWinner",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getAllEncryptedSums",
-      "outputs": [
-        {
-          "internalType": "string[]",
-          "name": "",
-          "type": "string[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_candidateId",
-          "type": "uint256"
-        }
-      ],
-      "name": "getCandidate",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string[]",
-          "name": "encryptedVoteVector",
-          "type": "string[]"
-        }
-      ],
-      "name": "vote",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "voterAddresses",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "voters",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    }
-  ];
+const CONTRACT_ADDRESS = "0xEd846D02417DAB6E9cE4026cb49E10608A484200";
+const ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "cnt",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "voter",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "candidateId",
+        "type": "uint256"
+      }
+    ],
+    "name": "Voted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "winnerName",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "winnerVoteCount",
+        "type": "uint256"
+      }
+    ],
+    "name": "VotingEnded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "VotingReset",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
+      }
+    ],
+    "name": "addCandidate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "candidates",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "voteCount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "candidatesCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "count",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "encryptedSums",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "endVotingAndDeclareWinner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllEncryptedSums",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_candidateId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getCandidate",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "X",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "Y",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Pairing.G1Point",
+            "name": "a",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256[2]",
+                "name": "X",
+                "type": "uint256[2]"
+              },
+              {
+                "internalType": "uint256[2]",
+                "name": "Y",
+                "type": "uint256[2]"
+              }
+            ],
+            "internalType": "struct Pairing.G2Point",
+            "name": "b",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "X",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "Y",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Pairing.G1Point",
+            "name": "c",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct Verifier.Proof",
+        "name": "proof",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "input",
+        "type": "uint256[2]"
+      }
+    ],
+    "name": "verifyTx",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "r",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string[]",
+        "name": "encryptedVoteVector",
+        "type": "string[]"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "a",
+        "type": "uint256[2]"
+      },
+      {
+        "internalType": "uint256[2][2]",
+        "name": "b",
+        "type": "uint256[2][2]"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "c",
+        "type": "uint256[2]"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "input",
+        "type": "uint256[2]"
+      }
+    ],
+    "name": "vote",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "voterAddresses",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "voters",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
 
 const FullHeightBox = styled(Box)(({ theme }) => ({
   minHeight: "100vh",width: "100vw",
@@ -333,7 +431,7 @@ function App() {
     if (!contract) return;
 
     const tx1 = await contract.getAllEncryptedSums();
-    console.log(tx1);
+    console.log(JSON.stringify(tx1));
     contract.once("VotingEnded", (wName, wCount) => {
       setWinner({ name: wName, votes: wCount.toString() });
     });
@@ -341,12 +439,98 @@ function App() {
     await tx.wait();
   };
 
+
+  const [status, setStatus] = useState('');
+  const generateProof = async (myvote, mxcandidate) => {
+    setStatus('Initializing ZoKrates...');
+    const zokratesProvider = await initialize();
+  
+    setStatus('Fetching artifacts...');
+    const response = await fetch('/out');
+    const program = await response.arrayBuffer();
+  
+    const provingKeyResponse = await fetch('/proving.key');
+    const provingKey = await provingKeyResponse.arrayBuffer();
+  
+    setStatus('Computing witness...');
+    
+    // CORRECT ABI STRUCTURE FOR YOUR .zok FILE
+    // const artifacts = {
+    //   program: new Uint8Array(program),
+    //   abi: {
+    //     "inputs": [
+    //       { "name": "vote", "type": "field", "visibility": "private" },
+    //       { "name": "maxCandidateId", "type": "field", "visibility": "public" }
+    //     ],
+    //     "outputs": [{ "name": "return", "type": "bool" }]
+    //   }
+    // };
+
+      const artifacts = {
+      program: new Uint8Array(program),
+      abi: 
+      {
+        "inputs": [
+          {
+            "name": "vote",
+            "public": false,
+            "type": "field"
+          },
+          {
+            "name": "maxCandidateId",
+            "public": true,
+            "type": "field"
+          }
+        ],
+        "output": {
+          "type": "bool"
+        }
+      }
+    };
+
+    console.log(myvote, "          ", mxcandidate)
+    // Input order must match .zok file: vote first, then maxCandidateId
+    const inputs = [String(myvote), String(mxcandidate)];
+  
+    try {
+      const { witness } = await zokratesProvider.computeWitness(artifacts, inputs);
+  
+      setStatus('Generating proof...');
+      const proof = await zokratesProvider.generateProof(
+        artifacts.program,
+        witness,
+        new Uint8Array(provingKey)
+      );
+  
+      console.log('Proof:', proof);
+      setStatus('Proof generated successfully!');
+      return proof;
+    } catch (error) {
+      console.error('Proof generation failed:', error);
+      setStatus(`Error: ${error.message}`);
+      throw error;
+    }
+  };
+
+
   // vote & add
   const vote = async () => {
     if (selected === null) return;
     try {
       const encryptedVector = await encryptVoteVector(selected, 3);
-      const tx = await contract.vote(encryptedVector);
+      const proof = await generateProof(selected+1, candidates.length);
+      console.log(proof);
+      // const tx = await contract.vote(encryptedVector);
+      const tx = await contract.vote(
+        encryptedVector,                        // string[] of encrypted votes
+        [proof.proof.a[0], proof.proof.a[1]],       // uint[2]
+        [                                           // uint[2][2]
+          [proof.proof.b[0][0], proof.proof.b[0][1]],
+          [proof.proof.b[1][0], proof.proof.b[1][1]],
+        ],
+        [proof.proof.c[0], proof.proof.c[1]],       // uint[2]
+        proof.inputs.map(i => BigInt(i))            // uint[]
+      );
       await tx.wait();
       alert("Vote cast successfully!");
       fetchCandidates(); // Refresh list
