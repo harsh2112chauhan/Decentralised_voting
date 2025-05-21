@@ -8,7 +8,7 @@ async function main() {
   const Voting = await hre.ethers.getContractFactory("Voting");
 
   // Kick off the deployment
-  const voting = await Voting.deploy(3);
+  const voting = await Voting.deploy(0);
   console.log("⏳  Deployment transaction hash:", voting.deploymentTransaction().hash);
 
   // Wait for the contract to be mined

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 import "./verifier.sol";
+
 contract Voting is Verifier {
     struct Candidate {
         string name;
@@ -15,6 +16,8 @@ contract Voting is Verifier {
     mapping(uint => string) public encryptedSums;
     address[] public voterAddresses;
 
+    // uint256 public votingDeadline; // voting end time in seconds since epoch
+
     event Voted(address indexed voter, uint256 indexed candidateId);
     event VotingEnded(string winnerName, uint256 winnerVoteCount);
     event VotingReset();
@@ -24,41 +27,54 @@ contract Voting is Verifier {
         _;
     }
 
+    // modifier onlyDuringVoting() {
+    //     require(block.timestamp <= votingDeadline, "Voting period has ended");
+    //     _;
+    // }
+
     constructor(uint256 cnt) {
         owner = msg.sender;
         candidatesCount = cnt;
-        
-        for (uint i = 0; i < candidatesCount; i++) {
-            encryptedSums[i] = "1"; // neutral element for Paillier encryption
-        }
+        count = 0;
+        // votingDeadline = block.timestamp + durationSeconds;
+
+        // for (uint i = 0; i < candidatesCount; i++) {
+        //     encryptedSums[i] = "1"; // neutral element for Paillier encryption
+        // }
     }
 
     function addCandidate(string memory _name) public onlyOwner {
         candidates[count] = Candidate(_name, 0);
+        encryptedSums[count] = "1"; // neutral element for Paillier encryption
         count++;
+        candidatesCount++;
     }
 
-    function vote(string[] memory encryptedVoteVector, uint[2] memory a,
+    function vote(
+        string[] memory encryptedVoteVector,
+        uint[2] memory a,
         uint[2][2] memory b,
         uint[2] memory c,
-        uint[2] memory input) public {
+        uint[2] memory input
+    ) public  {
         require(!voters[msg.sender], "You have already voted!");
-
         require(encryptedVoteVector.length == candidatesCount, "Invalid vector");
+
         Proof memory proof = Proof({
             a: Pairing.G1Point(a[0], a[1]),
             b: Pairing.G2Point([b[0][0], b[0][1]], [b[1][0], b[1][1]]),
             c: Pairing.G1Point(c[0], c[1])
         });
-        
+
         require(verifyTx(proof, input), "Invalid zk-SNARK proof!");
+
         for (uint i = 0; i < candidatesCount; i++) {
             encryptedSums[i] = string(abi.encodePacked(encryptedSums[i], "*", encryptedVoteVector[i]));
         }
+
         voters[msg.sender] = true;
         voterAddresses.push(msg.sender);
     }
-
 
     function endVotingAndDeclareWinner() public onlyOwner {
         require(candidatesCount > 0, "No candidates!");
@@ -71,33 +87,34 @@ contract Voting is Verifier {
                 winnerId = i;
             }
         }
+
         string memory winnerName = candidates[winnerId].name;
 
         emit VotingEnded(winnerName, maxVotes);
 
         for (uint256 i = 0; i < candidatesCount; i++) {
             delete candidates[i];
+            delete encryptedSums[i];
+
         }
         candidatesCount = 0;
+        count = 0;
 
         for (uint256 i = 0; i < voterAddresses.length; i++) {
             delete voters[voterAddresses[i]];
         }
         delete voterAddresses;
 
-
         emit VotingReset();
     }
 
-
     function getAllEncryptedSums() public view returns (string[] memory) {
-    string[] memory allSums = new string[](candidatesCount);
-    for (uint i = 0; i < candidatesCount; i++) {
-        allSums[i] = encryptedSums[i];
+        string[] memory allSums = new string[](candidatesCount);
+        for (uint i = 0; i < candidatesCount; i++) {
+            allSums[i] = encryptedSums[i];
+        }
+        return allSums;
     }
-    return allSums;
-    }
-
 
     function getCandidate(uint256 _candidateId) public view returns (string memory, uint256) {
         require(_candidateId < candidatesCount, "Invalid candidate!");

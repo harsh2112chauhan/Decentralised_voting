@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { encryptVoteVector } from "./encrypt";
 import { initialize } from 'zokrates-js';
+import { decryptTally } from "./decryptUtil";
 import {
   AppBar,
   Toolbar,
@@ -25,7 +26,7 @@ import { Brightness4, Brightness7, HowToVote } from "@mui/icons-material";
 import { styled } from "@mui/system";
 import "./App.css";
 
-const CONTRACT_ADDRESS = "0xEd846D02417DAB6E9cE4026cb49E10608A484200";
+const CONTRACT_ADDRESS = "0xF22A9e1785e3ad1ffa67B7E2E7217FC45858c666";
 const ABI = [
   {
     "inputs": [
@@ -390,6 +391,7 @@ function App() {
   const [newName, setNewName] = useState("");
   const [winner, setWinner] = useState({ name: "", votes: 0 });
   const [darkMode, setDarkMode] = useState(false);
+  const [End, setEnd] = useState(false);
 
   const theme = createTheme({
     palette: { mode: darkMode ? "dark" : "light" },
@@ -418,7 +420,9 @@ function App() {
     const arr = [];
     for (let i = 0; i < count; i++) {
       const [name, votesBN] = await contract.getCandidate(i);
-      arr.push({ id: i, name, votes: votesBN.toString() });
+      if (name && name.trim() !== "") { // Only add non-empty names
+        arr.push({ id: i, name, votes: votesBN.toString() });
+      }
     }
     setCandidates(arr);
   };
@@ -431,7 +435,9 @@ function App() {
     if (!contract) return;
 
     const tx1 = await contract.getAllEncryptedSums();
+    const dT = await decryptTally(tx1);
     console.log(JSON.stringify(tx1));
+    setEnd(dT);
     contract.once("VotingEnded", (wName, wCount) => {
       setWinner({ name: wName, votes: wCount.toString() });
     });
@@ -453,8 +459,8 @@ function App() {
     const provingKey = await provingKeyResponse.arrayBuffer();
   
     setStatus('Computing witness...');
+
     
-    // CORRECT ABI STRUCTURE FOR YOUR .zok FILE
     // const artifacts = {
     //   program: new Uint8Array(program),
     //   abi: {
@@ -517,8 +523,7 @@ function App() {
   const vote = async () => {
     if (selected === null) return;
     try {
-      const encryptedVector = await encryptVoteVector(selected, 3);
-      const proof = await generateProof(selected+1, candidates.length);
+      const encryptedVector = await encryptVoteVector(selected, candidates.length);      const proof = await generateProof(selected+1, candidates.length);
       console.log(proof);
       // const tx = await contract.vote(encryptedVector);
       const tx = await contract.vote(
@@ -570,14 +575,14 @@ function App() {
             <strong>You:</strong> {userAddr}
           </Typography> */}
 
-          {winner.name && (
+          {/* {winner.name && (
             <Paper elevation={6} sx={{ p: 3, mb: 4, bgcolor: "background.paper" }}>
               <Typography variant="h4" color="success.main">
                 🏆 Winner: {winner.name}
               </Typography>
               <Typography variant="h6">Votes: {winner.votes}</Typography>
             </Paper>
-          )}
+          )} */}
 
           <Grid container spacing={3}>
             {candidates.length ? (
@@ -590,9 +595,6 @@ function App() {
                       </Avatar>
                       <Box>
                         <Typography variant="h6">{c.name}</Typography>
-                        <Typography variant="body2">
-                          {c.votes} votes
-                        </Typography>
                       </Box>
                     </CardContent>
                     <CardActions>
@@ -612,6 +614,35 @@ function App() {
             )}
           </Grid>
 
+{/* // ...existing code... */}
+
+{End && Array.isArray(End) && (
+  <Paper elevation={4} sx={{ p: 3, mb: 4, bgcolor: "background.paper" }}>
+    <Typography variant="h5" gutterBottom>
+      Decrypted Tally
+    </Typography>
+    <Grid container spacing={2}>
+      {End.map((votes, idx) => (
+        <Grid item xs={12} sm={6} md={4} key={idx}>
+          <Box display="flex" alignItems="center">
+            <Avatar sx={{ mr: 2, bgcolor: "primary.main" }}>
+              <HowToVote />
+            </Avatar>
+            <Typography variant="h6">
+              {(candidates[idx]?.name || `Candidate ${idx + 1}`)}:{" "}
+              <span style={{ color: "#388e3c" }}>{votes.toString()}</span>
+            </Typography>
+          </Box>
+        </Grid>
+      ))}
+    </Grid>
+  </Paper>
+)}
+
+{/* // ...existing code... */}
+
+
+
           <Box textAlign="center" mt={4}>
             <Button
               variant="contained"
@@ -622,7 +653,6 @@ function App() {
               Submit Vote
             </Button>
           </Box>
-
           {owner?.toLowerCase() === userAddr?.toLowerCase() && (
             <Paper elevation={3} sx={{ mt: 6, p: 3 }}>
               <Typography variant="h5" gutterBottom>
@@ -660,7 +690,7 @@ function App() {
 
       <Box component="footer" sx={{ py: 2, textAlign: "center" }}>
         <Typography variant="body2">
-          &copy; {new Date().getFullYear()} Voting DApp — Made By Aniket, Hardik, Harsh, Hemant
+          &copy; {new Date().getFullYear()} Voting DApp — Made By Aniket, Harsh, Hemant
         </Typography>
       </Box>
     </ThemeProvider>
